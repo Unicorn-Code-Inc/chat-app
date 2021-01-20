@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/Unicorn-Code-Inc/chat-app/issues"
   },
-  "homepage": "https://github.com/Unicorn-Code-Inc/chat-app"
+  "homepage": "https://github.com/Unicorn-Code-Inc/chat-app",
+  "dependencies": {
+    "serverline": "^1.5.0"
+  }
 }
