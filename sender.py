@@ -2,14 +2,29 @@ import models
 import asyncio
 import asyncpg
 from aioconsole import ainput
+import pickle
 
 loop = asyncio.get_event_loop()
 
-async def send_message(conn: asyncpg.Connection, message: "models.Message"):
+async def send_message(conn: asyncpg.Connection, message: models.Message):
     ...
 
+async def connect():
+    with open("credentials.dat", "rb") as f:
+        creds = pickle.load(f)
+
+    print("Connecting to the database...")
+
+    try:
+        conn = await asyncpg.connect(**creds) # Create the connection
+    except Exception as exc:
+        exit(f"{exc.__class__.__name__}: {exc}")
+    else:
+        print("Connected successfully.")
+        return conn
+
 async def main():
-    conn = None # Create the connection
+    conn = await connect()
     if conn is None: # creating the connection failed, exit
         return
 
