@@ -1,0 +1,2 @@
+asyncpg==0.22.0
+aioconsole==0.3.1
