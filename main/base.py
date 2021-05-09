@@ -24,6 +24,7 @@ class Base:
         self.ip = None # Also created on `connect`
         self.loop = loop or asyncio.get_event_loop()
 
+
     async def connect(self):
         self.ip = await _get_public_ip(self.loop)
 
