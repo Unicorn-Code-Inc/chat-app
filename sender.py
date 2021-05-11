@@ -16,8 +16,9 @@ async def main():
         if message.lower() != "exit":
             await client.send_message(message) # sending the message
         else:
-            await client.logout() # Tidying up (close the conn)
             break # Break out of the for-loop
+
+    await client.logout() # Tidying up (close the conn)
 
 
 if __name__ == "__main__":
