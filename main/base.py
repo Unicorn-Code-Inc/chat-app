@@ -1,7 +1,10 @@
 import asyncio
 import asyncpg
 import pickle
+import getpass
 import requests
+import json
+from datetime import datetime
 
 __all__ = ("Base",)
 
@@ -35,11 +38,34 @@ class Base:
             raise RuntimeError(f"An exception raised when connecting\n{exc.__class__.__name__}: {exc}")
         else:
             self.conn = conn
+            await self.identify()
+
+
+    async def identify(self):
+        """Identifies the current IP address with the database and creates one if it doesn't exist"""
+        data = await self.conn.fetchrow("SELECT * FROM users WHERE ip_addr = $1;", self.ip)
+        if data is None:
+            data = await self._register()
+
+        self.user = dict(data)
+
+    
+    async def _register(self):
+        name = getpass.getuser()
+        data = await self.conn.fetchrow("INSERT INTO users (ip_addr, name) VALUES ($1, $2) RETURNING *", self.ip, name)
+        return data
 
 
     async def send_message(self, message: str):
         """Sends a message through the database"""
-        ...
+        display_name = self.user["nick"] or self.user["name"]
+        payload = json.dumps({
+            "author": display_name,
+            "content": message,
+        })
+
+        await self.conn.execute(f"NOTIFY message_channel, '{payload}';")
+        await self.conn.execute(f"INSERT INTO messages (author, content) VALUES ($1, $2);", self.ip, message)
 
 
     async def logout(self):
