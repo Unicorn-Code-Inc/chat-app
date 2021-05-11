@@ -69,6 +69,7 @@ class Client:
         payload = json.dumps({
             "message_id": message_id,
             "author": display_name,
+            "author_addr": self.ip,
             "content": message,
         })
 
@@ -118,7 +119,7 @@ class Server(Client):
     
     def receive_message(self, conn, pid, channel, payload):
         data = json.loads(payload)
-        if data['content'] == 'exit':
+        if data['content'] == 'exit' and data["author_addr"] == self.ip:
             # Logout and cleanup
             try:
                 self.fut.set_result(None)
