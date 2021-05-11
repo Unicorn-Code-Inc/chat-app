@@ -24,7 +24,10 @@ def _load_credentials():
 
 
 async def mark_as_read(conn, message_id):
-    await conn.execute("UPDATE messages SET read = true WHERE message_id = $1", message_id)
+    try:
+        await conn.execute("UPDATE messages SET read = true WHERE message_id = $1", message_id)
+    except:
+        pass
 
 
 class Client:
@@ -84,6 +87,7 @@ class Client:
     async def get_unread_messages(self):
         """Fetches the unread messages of the current user"""
         messages = await self.conn.fetch("""SELECT (message_id, author_name, content) FROM messages WHERE author != $1 AND read = false""", self.ip)
+        messages = [message for message in messages if message[0][2] != 'exit']
         print(f"You have {len(messages)} unread messages:")
 
         for message in messages:
