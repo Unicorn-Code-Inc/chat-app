@@ -6,7 +6,10 @@ loop = asyncio.get_event_loop()
 client = Client(loop=loop)
 
 async def main():
-    await client.connect()
+    try:
+        await client.connect()
+    except RuntimeError as exc:
+        exit(f"An error happened during connection\n{exc.__class__.__name__}: {exc}")
 
     while True:
         message = await ainput(">>> ")

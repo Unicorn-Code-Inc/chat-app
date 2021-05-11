@@ -11,5 +11,7 @@ async def main():
 if __name__ == "__main__":
     try:
         loop.run_until_complete(main())
+    except Exception as exc:
+        print(f"An error happened\n{exc.__class__.__name__}: {exc}")
     finally:
         loop.close()
