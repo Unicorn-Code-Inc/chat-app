@@ -7,8 +7,11 @@ import json
 from datetime import datetime
 import uuid
 from functools import partial
+from collections import namedtuple
 
 __all__ = ("Client", "Server")
+
+User = namedtuple("User", ["ip_addr", "name", "nick", "token"])
 
 async def _get_public_ip(loop: asyncio.AbstractEventLoop):
     def getter():
@@ -56,7 +59,8 @@ class Client:
         if data is None:
             data = await self._register()
 
-        self.user = dict(data)
+        user = User(**dict(data))
+        self.user = user
 
     
     async def _register(self):
