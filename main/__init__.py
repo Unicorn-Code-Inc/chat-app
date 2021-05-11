@@ -7,7 +7,7 @@ import json
 from datetime import datetime
 import uuid
 
-__all__ = ("Base", "Client", "Server")
+__all__ = ("Client", "Server")
 
 async def _get_public_ip(loop: asyncio.AbstractEventLoop):
     def getter():
@@ -22,7 +22,19 @@ def _load_credentials():
     return creds
 
 
-class Base:
+async def mark_as_read(conn, message_id):
+    await conn.execute("UPDATE messages SET read = true WHERE message_id = $1", message_id)
+
+
+def _listen_messages(conn, pid, channel, payload):
+    data = json.loads(payload)
+    print(f"({data['author']}): {data['content']}")
+
+    loop = conn._loop
+    loop.create_task(mark_as_read(conn, data['message_id']))
+
+
+class Client:
     def __init__(self, *, loop=None):
         self.conn = None # Created on `connect`
         self.ip = None # Also created on `connect`
@@ -68,30 +80,27 @@ class Base:
         })
 
         await self.conn.execute(f"NOTIFY message_channel, '{payload}';")
-        await self.conn.execute(f"INSERT INTO messages (message_id, author, content) VALUES ($1, $2, $3);", message_id, self.ip, message)
+        await self.conn.execute(f"INSERT INTO messages (message_id, author, content, author_name) VALUES ($1, $2, $3, $4);", message_id, self.ip, message, display_name)
 
 
     async def logout(self):
         await self.conn.close()
 
 
-class Client(Base):
-    ...
+    async def get_unread_messages(self):
+        """Fetches the unread messages of the current user"""
+        messages = await self.conn.fetch("""SELECT (message_id, author_name, content) FROM messages WHERE author = $1 AND read = false""", self.ip)
+        print(f"You have {len(messages)} unread messages:")
+
+        for message in messages:
+            message_id, author, content = message[0]
+            print(f"({author}): {content}")
+            await mark_as_read(self.conn, message_id)
+            
+        print()
 
 
-async def mark_as_read(conn, message_id="62259a55-8797-4a71-8429-c1c71f478ae2"):
-    await conn.execute("UPDATE messages SET read = true WHERE message_id = $1", message_id)
-
-
-def _listen_messages(conn, pid, channel, payload):
-    data = json.loads(payload)
-    print(f"({data['author']}): {data['content']}")
-
-    loop = conn._loop
-    loop.create_task(mark_as_read(conn, data['message_id'],))
-
-
-class Server(Base):
+class Server(Client):
     async def __aenter__(self):
         await self.connect()
         return self
@@ -109,5 +118,4 @@ class Server(Base):
         await self.conn.add_listener("message_channel", listener)
 
         self.fut = fut = self.loop.create_future()
-        await mark_as_read(self.conn)
         await fut   

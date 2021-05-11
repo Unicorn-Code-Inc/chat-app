@@ -5,6 +5,7 @@ loop = asyncio.get_event_loop()
 
 async def main():
     async with Server() as server:
+        await server.get_unread_messages()
         await server.listen()
 
 
