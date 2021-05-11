@@ -11,10 +11,11 @@ async def main():
     while True:
         message = await ainput(">>> ")
         if not message: # If the message is empty
+            print("Cannot send an empty message")
             continue
 
         if message.lower() != "exit":
-            await client.send_message(message) # sending the message
+            await client.send_message(message.replace("'", "")) # sending the message
         else:
             break # Break out of the for-loop
 
