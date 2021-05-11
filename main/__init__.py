@@ -119,12 +119,16 @@ class Server(Client):
     
     def receive_message(self, conn, pid, channel, payload):
         data = json.loads(payload)
-        if data['content'] == 'exit' and data["author_addr"] == self.ip:
-            # Logout and cleanup
-            try:
-                self.fut.set_result(None)
-            except:
-                pass
+        if data['content'] == 'exit':
+            if data["author_addr"] == self.ip: # We're exiting
+                # Logout and cleanup
+                try:
+                    self.fut.set_result(None)
+                except:
+                    pass
+            else:
+                # Someone else exitted
+                print(f"{data['author']} exitted.")
         else:
             print(f"({data['author']}): {data['content']}")
 
