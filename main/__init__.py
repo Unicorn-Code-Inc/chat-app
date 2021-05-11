@@ -103,6 +103,7 @@ class Client:
 class Server(Client):
     async def __aenter__(self):
         await self.connect()
+        await self.get_unread_messages()
         return self
 
     
