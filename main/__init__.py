@@ -6,6 +6,7 @@ import requests
 import json
 from datetime import datetime
 import uuid
+from functools import partial
 
 __all__ = ("Client", "Server")
 
@@ -24,14 +25,6 @@ def _load_credentials():
 
 async def mark_as_read(conn, message_id):
     await conn.execute("UPDATE messages SET read = true WHERE message_id = $1", message_id)
-
-
-def _listen_messages(conn, pid, channel, payload):
-    data = json.loads(payload)
-    print(f"({data['author']}): {data['content']}")
-
-    loop = conn._loop
-    loop.create_task(mark_as_read(conn, data['message_id']))
 
 
 class Client:
@@ -101,6 +94,11 @@ class Client:
 
 
 class Server(Client):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fut = None # created on `listen`
+
+
     async def __aenter__(self):
         await self.connect()
         await self.get_unread_messages()
@@ -111,12 +109,24 @@ class Server(Client):
         await self.logout()
 
 
-    async def listen(self, listener=None):
-        """Listens to incoming messages"""
-        if listener is None:
-            listener = _listen_messages
-        
-        await self.conn.add_listener("message_channel", listener)
+    async def listen(self):
+        await self.conn.add_listener("message_channel", self.receive_message)
 
-        self.fut = fut = self.loop.create_future()
-        await fut   
+        self.fut = self.loop.create_future()
+        await self.fut
+
+    
+    def receive_message(self, conn, pid, channel, payload):
+        data = json.loads(payload)
+        if data['content'] == 'exit':
+            # Logout and cleanup
+            try:
+                self.fut.set_result(None)
+            except:
+                pass
+        else:
+            print(f"({data['author']}): {data['content']}")
+
+
+        loop = conn._loop
+        loop.create_task(mark_as_read(conn, data['message_id']))
