@@ -26,4 +26,4 @@ In the second window type
 ```py
 python receiver.py
 ```
-This will be the window responsible for receiving the actual messages, you **do not** type here. There's no clean way for now to exit, `Ctrl + C` should do the trick for now, don't worry about the traceback.
+This will be the window responsible for receiving the actual messages, you **do not** type here. If you exit in the `sender` window, this should exit automatically.
