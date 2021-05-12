@@ -131,6 +131,6 @@ class Server(Client):
         else:
             print(f"({data['author']}): {data['content']}")
 
-
-        loop = conn._loop
-        loop.create_task(mark_as_read(conn, data['message_id']))
+        if data["author_addr"] != self.ip:
+            loop = conn._loop
+            loop.create_task(mark_as_read(conn, data['message_id']))
