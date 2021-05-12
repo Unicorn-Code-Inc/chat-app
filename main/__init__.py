@@ -124,10 +124,7 @@ class Server(Client):
         if data['content'] == 'exit':
             if data["author_addr"] == self.ip: # We're exiting
                 # Logout and cleanup
-                try:
-                    self.fut.set_result(None)
-                except:
-                    pass
+                self.fut.set_result(None)
             else:
                 # Someone else exitted
                 print(f"{data['author']} exitted.")
