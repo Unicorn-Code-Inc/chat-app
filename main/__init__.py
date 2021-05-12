@@ -4,9 +4,7 @@ import pickle
 import getpass
 import requests
 import json
-from datetime import datetime
 import uuid
-from functools import partial
 
 __all__ = ("Client", "Server")
 
