@@ -2,17 +2,17 @@ import asyncio
 import asyncpg
 import pickle
 import getpass
-import requests
 import json
+import aiohttp
 import uuid
 
 __all__ = ("Client", "Server")
 
-async def _get_public_ip(loop: asyncio.AbstractEventLoop):
-    def getter():
-        resp = requests.get("https://api.my-ip.io/ip.json").json()
-        return resp["ip"]
-    return await loop.run_in_executor(None, getter)
+async def _get_public_ip(session):
+    async with session.get("https://api.my-ip.io/ip.json") as resp:
+        data = await resp.json()
+
+    return data["ip"]
 
 
 def _load_credentials():
@@ -32,11 +32,13 @@ class Client:
     def __init__(self, *, loop=None):
         self.conn = None # Created on `connect`
         self.ip = None # Also created on `connect`
+        self.session = None # Also created on `connect`
         self.loop = loop or asyncio.get_event_loop()
 
 
     async def connect(self):
-        self.ip = await _get_public_ip(self.loop)
+        self.session = session = aiohttp.ClientSession()
+        self.ip = await _get_public_ip(session)
 
         creds = _load_credentials()
         try:
@@ -79,7 +81,9 @@ class Client:
 
 
     async def logout(self):
+        await self.session.close()
         await self.conn.close()
+        await asyncio.sleep(0.1) # So no error occurs
 
 
     async def get_unread_messages(self):
