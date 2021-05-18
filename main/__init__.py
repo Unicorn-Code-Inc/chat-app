@@ -5,23 +5,24 @@ import getpass
 import json
 import aiohttp
 import uuid
+import typing
 
 __all__ = ("Client", "Server")
 
-async def _get_public_ip(session):
+async def _get_public_ip(session: aiohttp.ClientSession) -> str:
     async with session.get("https://api.my-ip.io/ip.json") as resp:
         data = await resp.json()
 
     return data["ip"]
 
 
-def _load_credentials():
+def _load_credentials() -> typing.Dict[str, typing.Any]:
     with open("credentials.dat", "rb") as f:
         creds = pickle.load(f)
     return creds
 
 
-async def mark_as_read(conn, message_id):
+async def mark_as_read(conn: asyncpg.Connection, message_id: str) -> None:
     try:
         await conn.execute("UPDATE messages SET read = true WHERE message_id = $1", message_id)
     except:
@@ -122,7 +123,7 @@ class Server(Client):
         await self.fut
 
     
-    def receive_message(self, conn, pid, channel, payload):
+    def receive_message(self, conn: asyncpg.Connection, pid: int, channel: str, payload: str):
         data = json.loads(payload)
         if data['content'] == 'exit':
             if data["author_addr"] == self.ip: # We're exiting
