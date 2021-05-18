@@ -61,7 +61,7 @@ class Client:
     
     async def _register(self):
         name = getpass.getuser()
-        data = await self.conn.fetchrow("INSERT INTO users (ip_addr, name) VALUES ($1, $2) RETURNING *", self.ip, name)
+        data = await self.conn.fetchrow("INSERT INTO users (ip_addr, name, token) VALUES ($1, $2, $3) RETURNING *", self.ip, name, str(uuid.uuid4()))
         return data
 
 
