@@ -88,8 +88,7 @@ class Client:
 
     async def get_unread_messages(self):
         """Fetches the unread messages of the current user"""
-        messages = await self.conn.fetch("""SELECT (message_id, author_name, content) FROM messages WHERE author != $1 AND read = false""", self.ip)
-        messages = [message for message in messages if message[0][2] != 'exit']
+        messages = await self.conn.fetch("""SELECT (message_id, author_name, content) FROM messages WHERE author != $1 AND read = false AND content != 'exit'""", self.ip)
         print(f"You have {len(messages)} unread messages:")
 
         for message in messages:
