@@ -2,7 +2,7 @@
 Chatting app I made (`Kwieeciol`) for when Teddy's in school.
 
 ## Installation
- 1. First of all, download this repo with :
+ 1. First of all, download this repo with (you need [`git`](https://git-scm.com/)):
 ```
 git clone https://github.com/Unicorn-Code-Inc/chat-app.git
 ```
