@@ -138,7 +138,7 @@ class Server(Client):
                 self.fut.set_result(None)
             else:
                 # Someone else exitted
-                print(f"{data['author']} exitted.")
+                print(f"{data['author']} disconnected.")
         else:
             print(f"({data['author']}): {data['content']}")
 
