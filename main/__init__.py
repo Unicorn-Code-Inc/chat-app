@@ -49,15 +49,21 @@ class Client:
         else:
             self.conn = conn
             await self.identify()
+            await self.dispatch_listeners()
 
 
     async def identify(self):
-        """Identifies the current IP address with the database and creates one if it doesn't exist"""
+        """Identifies the current IP address with the database and creates a user if it doesn't exist"""
         data = await self.conn.fetchrow("SELECT * FROM users WHERE ip_addr = $1;", self.ip)
         if data is None:
             data = await self._register()
 
         self.user = dict(data)
+
+    
+    async def dispatch_listeners(self):
+        await self.conn.execute(f"NOTIFY on_connect, '{self.user['name']}'")
+        await self.conn.execute("UPDATE users SET connected=true WHERE ip_addr=$1", self.user['ip_addr'])
 
     
     async def _register(self):
@@ -82,6 +88,7 @@ class Client:
 
 
     async def logout(self):
+        await self.conn.execute("UPDATE users SET connected=false WHERE ip_addr=$1", self.user['ip_addr'])
         await self.session.close()
         await self.conn.close()
         await asyncio.sleep(0.1) # So no error occurs
@@ -138,3 +145,16 @@ class Server(Client):
         if data["author_addr"] != self.ip:
             loop = conn._loop
             loop.create_task(mark_as_read(conn, data['message_id']))
+
+    
+    def on_user_connect(self, conn: asyncpg.Connection, pid: int, channel: str, payload: str):
+        name = payload
+        if name == self.user['name'] or name == self.user['nick']:
+            return
+        
+        print(f"{name} has connected")
+
+
+    async def identify(self):
+        await super().identify()
+        await self.conn.add_listener("on_connect", self.on_user_connect)
