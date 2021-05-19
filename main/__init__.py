@@ -7,6 +7,8 @@ import aiohttp
 import uuid
 import typing
 import logging
+from playsound import playsound
+import functools
 
 __all__ = ("Client", "Server")
 
@@ -142,7 +144,12 @@ class Server(Client):
         self.fut = self.loop.create_future()
         await self.fut
 
-    
+
+    async def play_sound(self):
+        callback = functools.partial(playsound, "sound_effect.mp3")
+        await self.loop.run_in_executor(None, callback)
+
+
     def receive_message(self, conn: asyncpg.Connection, pid: int, channel: str, payload: str):
         data = json.loads(payload)
         log.info(f"received message from {data['author']}")
@@ -158,8 +165,8 @@ class Server(Client):
 
         if data["author_addr"] != self.ip:
             log.info(f"marking {data['message_id']} as read")
-            loop = conn._loop
-            loop.create_task(mark_as_read(conn, data['message_id']))
+            self.loop.create_task(self.play_sound())
+            self.loop.create_task(mark_as_read(conn, data['message_id']))
 
     
     def on_user_connect(self, conn: asyncpg.Connection, pid: int, channel: str, payload: str):
