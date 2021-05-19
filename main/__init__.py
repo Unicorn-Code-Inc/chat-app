@@ -37,7 +37,7 @@ class Server:
 
         async with server:
             try:
-                await server.server_forever()
+                await server.serve_forever()
             except asyncio.CancelledError:
                 logger.info("Server is down, cleaning up...")
                 await self.cleanup()
