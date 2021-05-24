@@ -139,7 +139,7 @@ class Server(Client):
 
     async def listen(self):
         log.info("listening to incoming messages")
-        await self.conn.add_listener("message_channel", self.receive_message)
+        await self.conn.add_listener("message_channel", self.sync_receive_message)
 
         self.fut = self.loop.create_future()
         await self.fut
@@ -150,8 +150,12 @@ class Server(Client):
         await self.loop.run_in_executor(None, callback)
 
 
-    def receive_message(self, conn: asyncpg.Connection, pid: int, channel: str, payload: str):
+    def sync_receive_message(self, conn: asyncpg.Connection, pid: int, channel: str, payload: str):
         data = json.loads(payload)
+        self.loop.create_task(self.async_receive_message(data))
+
+
+    async def async_receive_message(self, data: dict):
         log.info(f"received message from {data['author']}")
         if data['content'] == 'exit':
             if data["author_addr"] == self.ip: # We're exiting
@@ -165,8 +169,8 @@ class Server(Client):
 
         if data["author_addr"] != self.ip:
             log.info(f"marking {data['message_id']} as read")
-            self.loop.create_task(self.play_sound())
-            self.loop.create_task(mark_as_read(conn, data['message_id']))
+            await self.play_sound()
+            await mark_as_read(self.conn, data['message_id'])
 
     
     def on_user_connect(self, conn: asyncpg.Connection, pid: int, channel: str, payload: str):
